@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ntsako.ecommerce.exception.CartItemException;
 import com.ntsako.ecommerce.exception.ProductException;
+import com.ntsako.ecommerce.exception.UserException;
 import com.ntsako.ecommerce.model.Cart;
 import com.ntsako.ecommerce.request.ItemRequest;
 import com.ntsako.ecommerce.service.CartService;
@@ -24,7 +26,7 @@ public class CartController {
 	private CartService cartService;
 
 	@PostMapping("/add/{userId}")
-	public ResponseEntity<String> addCartItem(@PathVariable Long userId, @RequestBody ItemRequest itemRequest) throws ProductException {
+	public ResponseEntity<String> addCartItem(@PathVariable Long userId, @RequestBody ItemRequest itemRequest) throws ProductException, CartItemException, UserException {
 		
 		String addedCartItem = cartService.addCartItem(userId, itemRequest); 
 		

@@ -10,7 +10,7 @@ import com.ntsako.ecommerce.model.Rating;
 
 public interface RatingRepository extends JpaRepository<Rating, Long> {
 	
-	@Query("SELECT r FROM Rating r WHERE r.product.id =: productId")
+	@Query("SELECT r FROM Rating r WHERE r.product.id =:productId")
 	public List<Rating> getAllProductsRatings(@Param("productId") Long productId);
 
 }

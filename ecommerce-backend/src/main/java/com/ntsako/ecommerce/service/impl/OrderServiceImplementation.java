@@ -11,16 +11,18 @@ import org.springframework.stereotype.Service;
 
 import com.ntsako.ecommerce.constant.StatusConstant;
 import com.ntsako.ecommerce.exception.OrderException;
+import com.ntsako.ecommerce.exception.ProductException;
 import com.ntsako.ecommerce.model.Address;
 import com.ntsako.ecommerce.model.Cart;
 import com.ntsako.ecommerce.model.CartItem;
 import com.ntsako.ecommerce.model.Order;
 import com.ntsako.ecommerce.model.OrderItem;
-import com.ntsako.ecommerce.model.User;
+import com.ntsako.ecommerce.repository.AddressRepository;
 import com.ntsako.ecommerce.repository.OrderRepository;
 import com.ntsako.ecommerce.service.CartService;
 import com.ntsako.ecommerce.service.OrderItemService;
 import com.ntsako.ecommerce.service.OrderService;
+import com.ntsako.ecommerce.service.ProductService;
 
 import lombok.AllArgsConstructor;
 
@@ -31,14 +33,20 @@ public class OrderServiceImplementation implements OrderService {
 	private CartService cartService;
 	private OrderItemService orderItemService;
 	private OrderRepository orderRepository;
+	private ProductService productService;
+	private AddressRepository addressRepository;
 
 	@Override
-	public Order createOrder(User user, Address shippingAdress) {
+	public Order createOrder(Long userId, Address shippingAdress) {
 
-		Cart cart = cartService.findUserCart(user.getId());
+		Cart cart = cartService.findUserCart(userId);
 
+		shippingAdress.setUser(cart.getUser());
+		
+		addressRepository.save(shippingAdress);
+		
 		Order order = new Order();
-		order.setUser(user);
+		order.setUser(cart.getUser());
 		order.setShippingAddress(shippingAdress);
 		order.setTotalPrice(cart.getTotalPrice());
 		order.setTotalDiscountedPrice(cart.getTotalDicountedPrice());
@@ -74,9 +82,7 @@ public class OrderServiceImplementation implements OrderService {
 	}
 
 	@Override
-	public Order placedOrder(Long orderId) throws OrderException {
-
-		// TODO: email updates could be embedded to notify user on status
+	public Order placedOrder(Long orderId) throws OrderException, ProductException {
 
 		Order order = findOrderById(orderId);
 
@@ -84,19 +90,25 @@ public class OrderServiceImplementation implements OrderService {
 		order.setOrderStatus(StatusConstant.PLACED);
 		order.setOrderNumber(generateOrderNumber(order.getId()));
 		
+		Order placedOrder = orderRepository.save(order);
+		
 		cartService.clearCartAndItems(order.getUser().getId());
+		
+		productService.updateProductQuantities(order);
+		
+		// TODO: email updates could be embedded to notify user on status
 
-		return orderRepository.save(order);
+		return placedOrder;
 	}
 
 	@Override
 	public Order confirmedOrder(Long orderId) throws OrderException {
 
-		// TODO: email updates could be embedded to notify user on status
-
 		Order order = findOrderById(orderId);
 
 		order.setOrderStatus(StatusConstant.ORDER_CONFIRMED);
+		
+		// TODO: email updates could be embedded to notify user on status
 
 		return orderRepository.save(order);
 	}
@@ -116,11 +128,11 @@ public class OrderServiceImplementation implements OrderService {
 	@Override
 	public Order outOnDeliveryOrder(Long orderId) throws OrderException {
 
-		// TODO: email updates could be embedded to notify user on status
-
 		Order order = findOrderById(orderId);
 
 		order.setOrderStatus(StatusConstant.OUT_FOR_DELIVERY);
+		
+		// TODO: email updates could be embedded to notify user on status
 
 		return orderRepository.save(order);
 	}
@@ -128,12 +140,12 @@ public class OrderServiceImplementation implements OrderService {
 	@Override
 	public Order deliveredOrder(Long orderId) throws OrderException {
 
-		// TODO: email updates could be embedded to notify user on status
-
 		Order order = findOrderById(orderId);
 
 		order.setDeliveryDate(LocalDateTime.now());
 		order.setOrderStatus(StatusConstant.DELIVERED);
+		
+		// TODO: email updates could be embedded to notify user on status
 
 		return orderRepository.save(order);
 	}
@@ -141,11 +153,11 @@ public class OrderServiceImplementation implements OrderService {
 	@Override
 	public Order canceledOrder(Long orderId) throws OrderException {
 
-		// TODO: email updates could be embedded to notify user on status
-
 		Order order = findOrderById(orderId);
 
 		order.setOrderStatus(StatusConstant.CANCELLED);
+		
+		// TODO: email updates could be embedded to notify user on status
 
 		return orderRepository.save(order);
 	}
@@ -165,11 +177,13 @@ public class OrderServiceImplementation implements OrderService {
 	}
 
 	private List<OrderItem> mapAndPersistCartItemsToOrderItems(Set<CartItem> cartItems, Order order) {
+		
 		return cartItems.stream().map(cartItem -> mapCartItemToOrderItem(cartItem, order))
 				.map(orderItemService::createOrderItem).collect(Collectors.toList());
 	}
 
 	private OrderItem mapCartItemToOrderItem(CartItem cartItem, Order order) {
+		
 		OrderItem orderItem = new OrderItem();
 
 		orderItem.setOrder(order);
@@ -184,6 +198,7 @@ public class OrderServiceImplementation implements OrderService {
 	}
 
 	public String generateOrderNumber(long orderId) {
+		
 		String orderNumber = "";
 
 		String year = Integer.toString(Calendar.getInstance().get(Calendar.YEAR));

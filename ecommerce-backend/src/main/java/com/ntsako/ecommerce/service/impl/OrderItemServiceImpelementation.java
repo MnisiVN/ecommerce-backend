@@ -26,7 +26,6 @@ public class OrderItemServiceImpelementation implements OrderItemService {
 	@Override
 	public OrderItem createOrderItem(OrderItem orderItem) {
 
-		orderItem.setQuantity(1);
 		orderItem.setPrice(orderItem.getProduct().getPrice() * orderItem.getQuantity());
 		orderItem.setDiscountedPrice(orderItem.getProduct().getDiscountedPrice() * orderItem.getQuantity());
 

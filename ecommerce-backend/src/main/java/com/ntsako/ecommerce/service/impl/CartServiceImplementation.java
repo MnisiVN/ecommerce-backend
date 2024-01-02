@@ -2,7 +2,9 @@ package com.ntsako.ecommerce.service.impl;
 
 import org.springframework.stereotype.Service;
 
+import com.ntsako.ecommerce.exception.CartItemException;
 import com.ntsako.ecommerce.exception.ProductException;
+import com.ntsako.ecommerce.exception.UserException;
 import com.ntsako.ecommerce.model.Cart;
 import com.ntsako.ecommerce.model.CartItem;
 import com.ntsako.ecommerce.model.Product;
@@ -32,14 +34,15 @@ public class CartServiceImplementation implements CartService{
 	}
 
 	@Override
-	public String addCartItem(Long userId, ItemRequest itemRequest) throws ProductException {
+	public String addCartItem(Long userId, ItemRequest itemRequest) throws ProductException, CartItemException, UserException {
 		
 		Cart cart = cartRepository.findByUserId(userId);
 		Product product = productService.findProductById(itemRequest.getProductId());
 		
-		CartItem isCartItemPresent = cartItemService.isCartItemExist(cart, product, itemRequest.getSize(), userId);
+		CartItem cartItemPresent = cartItemService.isCartItemExist(cart, product, itemRequest.getSize(), userId);
 		
-		if (isCartItemPresent == null) {
+		if (cartItemPresent == null) {
+			
 			CartItem cartItem = new CartItem();
 			cartItem.setProduct(product);
 			cartItem.setCart(cart);
@@ -52,7 +55,12 @@ public class CartServiceImplementation implements CartService{
 			
 			CartItem createdCartItem = cartItemService.createCartItem(cartItem);
 			cart.getCartItems().add(createdCartItem);
-		} 
+		}  else {
+			
+			cartItemPresent.setQuantity(cartItemPresent.getQuantity() + itemRequest.getQuantity());
+	
+			cartItemService.updateCartItem(userId, cartItemPresent.getId(), cartItemPresent);
+		}
 		
 		return "Item Added To Cart";
 	}
