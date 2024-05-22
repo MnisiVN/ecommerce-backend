@@ -10,6 +10,10 @@ this include but not limited to -
 some of the functions covered include:
 -authorisation and authentication
 -products
--enventry
 -cart
 -checkout
+-oder
+-user amangement
+-ratings
+-and reviewas
+
