@@ -1,6 +1,6 @@
 This is a monolithic java springboot backend of a simple ecommerce applicarion. It covers almost all the basic parts of the ecommerce app.
 
-this include but not limited to -
+this include but not limited to:
 -database connection
 -models
 -repositories
